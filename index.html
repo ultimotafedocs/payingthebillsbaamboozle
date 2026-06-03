@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paying the bills: Choose the correct word</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Nunito',sans-serif;
+  background: #1a1060;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  overflow:hidden;
+}
+
+/* stars bg */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(circle at 15% 20%, #2d1a80 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, #1a0a5e 0%, transparent 40%),
+    #12094a;
+  z-index:0;
+}
+
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* HEADER */
+.top-bar{
+  position:relative;z-index:10;
+  width:100%;max-width:1100px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 28px 10px;
+}
+.game-title{
+  font-family:'Baloo 2',cursive;
+  font-size:2rem;font-weight:800;
+  color:#fff;
+  text-shadow:0 2px 12px rgba(120,80,255,0.6);
+  letter-spacing:-0.5px;
+}
+.game-title span{color:#f9c74f}
+
+.score-box{
+  display:flex;gap:14px;align-items:center;
+}
+.score-pill{
+  background:rgba(255,255,255,0.12);
+  border:1.5px solid rgba(255,255,255,0.2);
+  border-radius:30px;
+  padding:8px 20px;
+  color:#fff;
+  font-size:1rem;font-weight:800;
+  display:flex;align-items:center;gap:8px;
+}
+.score-pill .label{font-size:0.78rem;font-weight:700;opacity:0.7;text-transform:uppercase;letter-spacing:1px}
+.score-pill .val{font-size:1.3rem;color:#f9c74f}
+
+/* GRID */
+.grid-wrap{
+  position:relative;z-index:10;
+  width:100%;max-width:1100px;
+  padding:0 20px 10px;
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:10px;
+}
+.num-tile{
+  aspect-ratio:1;
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Baloo 2',cursive;
+  font-size:2.4rem;font-weight:800;
+  cursor:pointer;
+  border:2.5px solid transparent;
+  transition:transform .15s, box-shadow .15s, opacity .2s;
+  user-select:none;
+  position:relative;
+  overflow:hidden;
+}
+.num-tile:hover:not(.used){
+  transform:scale(1.08);
+  box-shadow:0 6px 24px rgba(0,0,0,0.4);
+}
+.num-tile.used{
+  opacity:0.38;
+  cursor:default;
+  transform:none;
+}
+.num-tile.used::after{
+  content:'✓';
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;
+  color:rgba(255,255,255,0.5);
+  background:rgba(0,0,0,0.25);
+}
+
+/* tile colour palette - 8 cycling colours */
+.tc0{background:#7c3aed;border-color:#9d5ff5;color:#fff}
+.tc1{background:#0e7490;border-color:#22b8d4;color:#fff}
+.tc2{background:#be185d;border-color:#e84393;color:#fff}
+.tc3{background:#b45309;border-color:#f59e0b;color:#fff}
+.tc4{background:#065f46;border-color:#10b981;color:#fff}
+.tc5{background:#1d4ed8;border-color:#60a5fa;color:#fff}
+.tc6{background:#7c2d12;border-color:#fb923c;color:#fff}
+.tc7{background:#4c1d95;border-color:#a78bfa;color:#fff}
+
+/* QUESTION MODAL */
+.modal-bg{
+  display:none;
+  position:fixed;inset:0;z-index:100;
+  background:rgba(8,4,38,0.88);
+  align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-bg.open{display:flex}
+.modal{
+  background:linear-gradient(135deg,#1e0f6e 0%,#2a1080 60%,#1e0f6e 100%);
+  border:2px solid rgba(167,139,250,0.5);
+  border-radius:24px;
+  padding:36px 40px 32px;
+  max-width:820px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.7);
+  position:relative;
+  text-align:center;
+}
+.q-badge{
+  display:inline-block;
+  background:rgba(249,199,79,0.15);
+  border:1.5px solid #f9c74f;
+  color:#f9c74f;
+  font-size:0.85rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:1.5px;
+  border-radius:20px;padding:5px 16px;
+  margin-bottom:20px;
+}
+.q-text{
+  font-family:'Baloo 2',cursive;
+  font-size:2.2rem;font-weight:800;
+  color:#fff;
+  line-height:1.35;
+  margin-bottom:30px;
+  min-height:80px;
+}
+.q-text .blank{
+  display:inline-block;
+  background:rgba(249,199,79,0.2);
+  border-bottom:3px solid #f9c74f;
+  color:#f9c74f;
+  padding:0 12px 2px;
+  border-radius:4px 4px 0 0;
+  min-width:180px;
+  letter-spacing:1px;
+}
+.choices{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-bottom:10px;
+}
+.choice-btn{
+  background:rgba(255,255,255,0.08);
+  border:2px solid rgba(255,255,255,0.18);
+  border-radius:14px;
+  padding:18px 20px;
+  color:#fff;
+  font-family:'Nunito',sans-serif;
+  font-size:1.35rem;font-weight:800;
+  cursor:pointer;
+  transition:background .15s, border-color .15s, transform .1s;
+  text-align:left;
+  display:flex;align-items:center;gap:14px;
+  line-height:1.3;
+}
+.choice-btn:hover:not(:disabled){
+  background:rgba(167,139,250,0.22);
+  border-color:#a78bfa;
+  transform:translateY(-2px);
+}
+.choice-btn:disabled{cursor:default}
+.choice-btn.correct{background:rgba(16,185,129,0.25);border-color:#10b981;color:#6ee7b7}
+.choice-btn.wrong  {background:rgba(239,68,68,0.22); border-color:#ef4444;color:#fca5a5}
+.choice-btn .opt-letter{
+  display:flex;align-items:center;justify-content:center;
+  width:36px;height:36px;min-width:36px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.12);
+  font-size:1rem;font-weight:900;
+  flex-shrink:0;
+}
+.choice-btn.correct .opt-letter{background:rgba(16,185,129,0.35)}
+.choice-btn.wrong   .opt-letter{background:rgba(239,68,68,0.3)}
+
+/* FEEDBACK */
+.feedback{
+  display:none;
+  margin-top:18px;
+  border-radius:14px;
+  padding:16px 20px;
+  font-size:1.15rem;font-weight:800;
+  line-height:1.4;
+  text-align:center;
+}
+.feedback.show{display:block}
+.feedback.correct{background:rgba(16,185,129,0.18);border:1.5px solid #10b981;color:#6ee7b7}
+.feedback.wrong  {background:rgba(239,68,68,0.15); border:1.5px solid #ef4444;color:#fca5a5}
+
+.next-btn{
+  display:none;
+  margin-top:20px;
+  background:#7c3aed;
+  border:none;
+  border-radius:30px;
+  padding:14px 40px;
+  color:#fff;
+  font-family:'Baloo 2',cursive;
+  font-size:1.2rem;font-weight:800;
+  cursor:pointer;
+  transition:background .15s, transform .1s;
+  letter-spacing:0.3px;
+}
+.next-btn.show{display:inline-block}
+.next-btn:hover{background:#6d28d9;transform:scale(1.04)}
+
+.close-btn{
+  position:absolute;top:16px;right:18px;
+  background:rgba(255,255,255,0.1);
+  border:1.5px solid rgba(255,255,255,0.2);
+  border-radius:50%;
+  width:34px;height:34px;
+  color:#fff;font-size:1rem;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.close-btn:hover{background:rgba(255,255,255,0.2)}
+
+/* END SCREEN */
+.end-screen{
+  display:none;
+  position:fixed;inset:0;z-index:200;
+  background:rgba(8,4,38,0.95);
+  align-items:center;justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  padding:20px;
+}
+.end-screen.open{display:flex}
+.end-trophy{font-size:5rem;margin-bottom:16px}
+.end-title{
+  font-family:'Baloo 2',cursive;
+  font-size:3rem;font-weight:800;color:#f9c74f;
+  margin-bottom:8px;
+}
+.end-sub{font-size:1.4rem;color:#c4b5fd;font-weight:700;margin-bottom:28px}
+.end-score{
+  font-family:'Baloo 2',cursive;
+  font-size:4rem;font-weight:800;color:#fff;
+  margin-bottom:6px;
+}
+.end-score span{color:#f9c74f}
+.restart-btn{
+  margin-top:28px;
+  background:#7c3aed;border:none;border-radius:30px;
+  padding:16px 48px;color:#fff;
+  font-family:'Baloo 2',cursive;font-size:1.4rem;font-weight:800;
+  cursor:pointer;transition:background .15s;
+}
+.restart-btn:hover{background:#6d28d9}
+
+/* SHUFFLE BUTTON */
+.shuffle-btn{
+  background:rgba(249,199,79,0.15);
+  border:1.5px solid #f9c74f;
+  border-radius:30px;
+  padding:10px 26px;
+  color:#f9c74f;
+  font-family:'Baloo 2',cursive;
+  font-size:1rem;font-weight:800;
+  cursor:pointer;
+  transition:background .15s, transform .1s;
+  letter-spacing:0.3px;
+  display:flex;align-items:center;gap:8px;
+}
+.shuffle-btn:hover{background:rgba(249,199,79,0.28);transform:scale(1.05)}
+</style>
+.progress-wrap{
+  position:relative;z-index:10;
+  width:100%;max-width:1100px;
+  padding:0 20px 14px;
+}
+.progress-bar-bg{background:rgba(255,255,255,0.1);border-radius:99px;height:7px}
+.progress-bar-fill{background:linear-gradient(90deg,#a78bfa,#f9c74f);height:7px;border-radius:99px;transition:width .4s}
+.progress-label{color:rgba(255,255,255,0.5);font-size:0.82rem;font-weight:700;margin-top:5px;text-align:right}
+</style>
+</head>
+<body>
+
+<!-- Animated stars -->
+<canvas class="stars" id="starCanvas"></canvas>
+
+<div class="top-bar">
+  <div class="game-title">Paying the bills: <span>Choose the correct word</span> 💳</div>
+  <div class="score-box">
+    <div class="score-pill"><span class="label">Score</span><span class="val" id="scoreVal">0</span></div>
+    <div class="score-pill"><span class="label">Done</span><span class="val" id="doneVal">0/39</span></div>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progBar" style="width:0%"></div></div>
+  <div class="progress-label" id="progLabel">Choose a number to begin</div>
+</div>
+
+<div style="position:relative;z-index:10;width:100%;max-width:1100px;padding:0 20px 10px;display:flex;justify-content:flex-end;">
+  <button class="shuffle-btn" onclick="shuffleGrid()">🔀 Shuffle</button>
+</div>
+
+<div class="grid-wrap" id="grid"></div>
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <div class="q-badge" id="qBadge">Question 1</div>
+    <div class="q-text" id="qText"></div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" onclick="closeModal()">Next ›</button>
+  </div>
+</div>
+
+<!-- End Screen -->
+<div class="end-screen" id="endScreen">
+  <div class="end-trophy" id="endTrophy">🏆</div>
+  <div class="end-title">All done!</div>
+  <div class="end-sub" id="endSub">Great work on banking vocabulary!</div>
+  <div class="end-score"><span id="finalScore">0</span> / 39 correct</div>
+  <button class="restart-btn" onclick="restartGame()">Play Again</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  { word:"That's not bad",  sentence:"You spent $85 on food this week. <BLANK>! That is a good amount – not too much.",           answer:"That's not bad",        distractors:["Good on ya","Righto","Sorted"] },
+  { word:"direct debit",   sentence:"My rent leaves my account on its own each month. I set up a <BLANK> so I never miss it.",    answer:"direct debit",          distractors:["Bpay","refund","direct deposit"] },
+  { word:"on it",          sentence:"A: Can you check the bill? B: Yes, I am <BLANK>. I am doing it right now.",                 answer:"on it",                 distractors:["sorted","spot on","due"] },
+  { word:"go through",     sentence:"Let us <BLANK> your bank statement together. We will look at it and talk about each payment.",answer:"go through",            distractors:["add it all up","stay on top of","cover"] },
+  { word:"spot anything dodgy", sentence:"Look at your transactions carefully. Can you <BLANK>? Something that looks wrong?",   answer:"spot anything dodgy",   distractors:["catch any mistakes","leave a bit","go through"] },
+  { word:"groceries",      sentence:"I went to the supermarket and bought food and everyday things for the house. I spent $110 on <BLANK>.", answer:"groceries",  distractors:["wages","savings","car rego"] },
+  { word:"punch it into the calculator", sentence:"I want to find the total. Let me <BLANK> and type in all the numbers.",     answer:"punch it into the calculator", distractors:["add it all up","go through","stay on top of"] },
+  { word:"cover",          sentence:"Do you have enough money? Will your pay <BLANK> the rent this week?",                       answer:"cover",                 distractors:["leave a bit","sort","top up my savings"] },
+  { word:"came through",   sentence:"I checked my banking app this morning. My pay <BLANK>! The money arrived in my account.",  answer:"came through",          distractors:["went up","came down","came to"] },
+  { word:"leave a bit",    sentence:"After you pay all your bills, try to <BLANK> of money in your account for other needs.",   answer:"leave a bit",           distractors:["cover","add it all up","top up my savings"] },
+  { word:"take care of",   sentence:"Do not worry about the bill. I will <BLANK> it myself. I will handle it today.",           answer:"take care of",          distractors:["stay on top of","go through","sort it"] },
+  { word:"add it all up",  sentence:"I have five bills this month. I need to <BLANK> to find the total amount I owe.",          answer:"add it all up",         distractors:["punch it into the calculator","go through","stay on top of"] },
+  { word:"credit",         sentence:"I looked at my bank statement. I can see a <BLANK> of $500 – that is money that came INTO my account.", answer:"credit",   distractors:["debit","refund","transactions"] },
+  { word:"banking app",    sentence:"I use a phone app to check my account and pay bills. I open my <BLANK> every morning.",    answer:"banking app",           distractors:["phone plan","direct debit","savings"] },
+  { word:"spot on",        sentence:"I added up my bills and got $340. My friend checked it too – she said my total was <BLANK>. It was exactly right.", answer:"spot on", distractors:["sorted","that's not bad","good on ya"] },
+  { word:"debit",          sentence:"I bought coffee and the money left my account straight away. That payment is called a <BLANK>.", answer:"debit",           distractors:["credit","refund","direct deposit"] },
+  { word:"quarterly",      sentence:"I pay my water bill every three months. It is a <BLANK> bill.",                             answer:"quarterly",             distractors:["fortnightly pay","due","monthly"] },
+  { word:"righto",         sentence:"A: Can you come to the bank with me? B: <BLANK>! That is fine. Let us go.",                answer:"righto",                distractors:["sorted","spot on","that's not bad"] },
+  { word:"fortnightly pay",sentence:"My pay arrives every two weeks. I get <BLANK>, so I am paid on the 1st and 15th.",         answer:"fortnightly pay",       distractors:["quarterly","direct deposit","wages"] },
+  { word:"phone plan",     sentence:"I pay $45 every month to my phone company for calls and data. This is my <BLANK>.",        answer:"phone plan",            distractors:["banking app","direct debit","Bpay"] },
+  { word:"rough estimate", sentence:"I do not need the exact number right now. Can you give me a <BLANK>? Just a quick guess is fine.", answer:"rough estimate",  distractors:["bank balance","spot on","direct deposit"] },
+  { word:"good on ya",     sentence:"You saved $200 this month – that is great! <BLANK>! Well done!",                           answer:"good on ya",            distractors:["righto","that's not bad","sorted"] },
+  { word:"catch any mistakes", sentence:"I always check my bill before I pay it. I want to <BLANK> before they become a big problem.", answer:"catch any mistakes", distractors:["spot anything dodgy","go through","stay on top of"] },
+  { word:"came down",      sentence:"My electricity bill was $180 last month. This month it is only $140. It <BLANK> – it got smaller.", answer:"came down",     distractors:["went up","came through","came to"] },
+  { word:"top up my savings", sentence:"I want to add more money to what I have already saved. I want to <BLANK> this month.",  answer:"top up my savings",     distractors:["leave a bit","cover","stay on top of"] },
+  { word:"wages",          sentence:"At the end of the week, my boss pays me for my work. These payments are called my <BLANK>.", answer:"wages",               distractors:["savings","refund","bank balance"] },
+  { word:"Bpay",           sentence:"I pay my electricity bill through my banking app. I use <BLANK> – it is an easy Australian way to pay bills online.", answer:"Bpay", distractors:["direct debit","direct deposit","phone plan"] },
+  { word:"went up",        sentence:"My rent was $400 last year. Now it is $450. The rent <BLANK> – it got bigger.",             answer:"went up",               distractors:["came down","came through","came to"] },
+  { word:"transactions",   sentence:"I can see all the money going in and out of my account in my banking app. These are called <BLANK>.", answer:"transactions", distractors:["savings","wages","credit"] },
+  { word:"savings",        sentence:"I do not spend all my money. I put some away and keep it safe. This is my <BLANK>.",        answer:"savings",               distractors:["wages","bank balance","refund"] },
+  { word:"bank balance",   sentence:"I checked my account and I have $623 in it. That is my <BLANK> – the total money I have right now.", answer:"bank balance",  distractors:["savings","wages","credit"] },
+  { word:"direct deposit", sentence:"My employer sends my pay straight into my bank account automatically. This is called <BLANK>.", answer:"direct deposit",     distractors:["direct debit","Bpay","credit"] },
+  { word:"due",            sentence:"I need to pay my phone bill by Friday. The bill is <BLANK> on Friday – I must not forget!",  answer:"due",                   distractors:["sorted","spot on","on it"] },
+  { word:"came to",        sentence:"I bought three items: $20, $35, and $15. The total <BLANK> $70 – that was the final amount.", answer:"came to",              distractors:["went up","came down","came through"] },
+  { word:"stay on top of", sentence:"I check my bills every week so I never fall behind. I like to <BLANK> my money and keep control.", answer:"stay on top of",  distractors:["go through","catch any mistakes","add it all up"] },
+  { word:"refund",         sentence:"I paid for a shirt but it was the wrong size. The shop gave my money back. I got a <BLANK>.", answer:"refund",              distractors:["credit","direct deposit","bank balance"] },
+  { word:"Are you free?",  sentence:"I want to ask my friend for help. I say: '<BLANK> Do you have time to help me right now?'",  answer:"Are you free?",         distractors:["Good on ya","That's not bad","Righto"] },
+  { word:"sorted",         sentence:"I have paid all my bills and everything is done. It is all <BLANK> – I do not need to worry.", answer:"sorted",              distractors:["due","spot on","on it"] },
+  { word:"car rego",       sentence:"Every year I pay a fee so my car can drive on the road legally. This yearly fee is called <BLANK>.", answer:"car rego",       distractors:["phone plan","direct debit","quarterly"] }
+];
+
+const LETTERS = ['A','B','C','D'];
+const COLORS = 8;
+let score = 0;
+let done = 0;
+let usedSet = new Set();
+let currentQ = null;
+let answered = false;
+
+function shuffleGrid(){
+  shuffleUnplayedTiles();
+}
+
+// tileMap[tilePosition] = questionIndex
+let tileMap = [];
+
+function shuffleUnplayedTiles(){
+  const grid = document.getElementById('grid');
+  const tiles = Array.from(grid.children);
+  // Find unplayed tile positions
+  const unplayed = tiles
+    .map((t,pos) => ({ pos, qIdx: tileMap[pos] }))
+    .filter(({qIdx}) => !usedSet.has(qIdx));
+  // Shuffle their question assignments
+  const qIdxs = shuffle(unplayed.map(u => u.qIdx));
+  unplayed.forEach(({pos}, i) => {
+    tileMap[pos] = qIdxs[i];
+    tiles[pos].textContent = pos + 1;
+    tiles[pos].onclick = (function(p){ return ()=>openQuestion(p, tileMap[p]); })(pos);
+  });
+}
+
+function buildGrid(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  tileMap = [];
+  QUESTIONS.forEach((q,i)=>{
+    tileMap[i] = i;
+    const tile = document.createElement('div');
+    tile.className = `num-tile tc${i%COLORS}`;
+    tile.id = `tile-${i}`;
+    tile.textContent = i+1;
+    tile.onclick = (function(pos){ return ()=>openQuestion(pos, tileMap[pos]); })(i);
+    grid.appendChild(tile);
+  });
+}
+
+let currentTilePos = null;
+
+function openQuestion(tilePos, qIdx){
+  if(usedSet.has(qIdx)) return;
+  currentQ = qIdx;
+  currentTilePos = tilePos;
+  answered = false;
+  const q = QUESTIONS[qIdx];
+
+  document.getElementById('qBadge').textContent = `Question ${currentTilePos + 1}`;
+
+  // build sentence
+  const html = q.sentence.replace('<BLANK>',`<span class="blank">___________</span>`);
+  document.getElementById('qText').innerHTML = html;
+
+  // build choices – shuffle correct answer into distractors
+  const opts = shuffle([q.answer, ...q.distractors]);
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  opts.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="opt-letter">${LETTERS[i]}</span>${opt}`;
+    btn.dataset.val = opt;
+    btn.onclick = ()=>selectAnswer(opt, btn, opts);
+    choicesEl.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('nextBtn').className = 'next-btn';
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function selectAnswer(val, btn, opts){
+  if(answered) return;
+  answered = true;
+  const q = QUESTIONS[currentQ];
+  const correct = val === q.answer;
+
+  // disable all buttons, colour them
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    b.disabled = true;
+    if(b.dataset.val === q.answer) b.classList.add('correct');
+    else if(b === btn && !correct) b.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  if(correct){
+    score++;
+    document.getElementById('scoreVal').textContent = score;
+    fb.textContent = '✅ Correct! Well done!';
+    fb.className = 'feedback correct show';
+  } else {
+    fb.innerHTML = `❌ Not quite. The correct answer is: <strong>${q.answer}</strong>`;
+    fb.className = 'feedback wrong show';
+  }
+
+  done++;
+  usedSet.add(currentQ);
+  document.getElementById(`tile-${currentTilePos}`).classList.add('used');
+  document.getElementById('doneVal').textContent = `${done}/39`;
+  updateProgress();
+
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+function updateProgress(){
+  const pct = Math.round((done/39)*100);
+  document.getElementById('progBar').style.width = pct+'%';
+  document.getElementById('progLabel').textContent = `${done} of 39 questions done`;
+}
+
+function closeModal(){
+  document.getElementById('modalBg').classList.remove('open');
+  if(done === 39){
+    setTimeout(showEnd, 400);
+  }
+}
+
+function showEnd(){
+  const pct = Math.round((score/39)*100);
+  document.getElementById('finalScore').textContent = score;
+  let trophy = '🏆', sub = '';
+  if(pct===100){ trophy='🌟'; sub='Perfect score! Outstanding work!'; }
+  else if(pct>=80){ trophy='🏆'; sub='Excellent! You know these words very well.'; }
+  else if(pct>=60){ trophy='👍'; sub='Good effort! Keep practising.'; }
+  else { trophy='📚'; sub='Keep going – every word you learn helps!'; }
+  document.getElementById('endTrophy').textContent = trophy;
+  document.getElementById('endSub').textContent = sub;
+  document.getElementById('endScreen').classList.add('open');
+}
+
+function restartGame(){
+  score=0; done=0; usedSet=new Set(); answered=false; currentQ=null;
+  document.getElementById('scoreVal').textContent='0';
+  document.getElementById('doneVal').textContent='0/39';
+  document.getElementById('progBar').style.width='0%';
+  document.getElementById('progLabel').textContent='Choose a number to begin';
+  document.getElementById('endScreen').classList.remove('open');
+  buildGrid();
+}
+
+function shuffle(a){
+  const arr=[...a];
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+// Stars animation
+(function(){
+  const canvas=document.getElementById('starCanvas');
+  const ctx=canvas.getContext('2d');
+  let stars=[];
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;stars=[];for(let i=0;i<120;i++){stars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.5+0.3,o:Math.random(),s:Math.random()*0.005+0.001,d:Math.random()>0.5?1:-1});}}
+  function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);stars.forEach(s=>{s.o+=s.s*s.d;if(s.o>1||s.o<0.1)s.d*=-1;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${s.o})`;ctx.fill();});requestAnimationFrame(draw);}
+  window.addEventListener('resize',resize);resize();draw();
+})();
+
+buildGrid();
+</script>
+</body>
+</html>
